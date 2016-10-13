@@ -3,10 +3,9 @@
   <groupId>net.doughughes</groupId>
   <artifactId>testifier-rule</artifactId>
   <versioning>
-    <release>1.0.3</release>
     <versions>
-      <version>1.0.3</version>
+      <version>1.0.4-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20161013124935</lastUpdated>
+    <lastUpdated>20161013125217</lastUpdated>
   </versioning>
 </metadata>
