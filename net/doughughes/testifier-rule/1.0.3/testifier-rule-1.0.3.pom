@@ -134,6 +134,8 @@
                             <!-- remote branch name -->
                             <branch>refs/heads/mvn-repo</branch>
                             <includes><include>**/*</include></includes>
+                            <!-- allow non-snapshot versions -->
+                            <merge>true</merge>
                         </configuration>
                     </execution>
                 </executions>
