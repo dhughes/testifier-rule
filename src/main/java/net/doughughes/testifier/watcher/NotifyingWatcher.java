@@ -8,7 +8,9 @@ import net.doughughes.testifier.util.SourceCodeExtractor;
 import net.doughughes.testifier.annotation.Testifier;
 import net.doughughes.testifier.util.GitService;
 import org.apache.http.client.fluent.Async;
+import org.apache.http.client.fluent.Content;
 import org.apache.http.client.fluent.Request;
+import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.entity.ContentType;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestWatcher;
@@ -116,7 +118,22 @@ public class NotifyingWatcher extends TestWatcher {
 
         // make an async request to post the notification
         async.execute(Request.Post(notificationUrl)
-                .bodyString(json, ContentType.APPLICATION_JSON));
+                .bodyString(json, ContentType.APPLICATION_JSON), new FutureCallback<Content>() {
+            @Override
+            public void completed(Content result) {
+                System.out.println(result.toString());
+            }
+
+            @Override
+            public void failed(Exception ex) {
+                ex.printStackTrace();
+            }
+
+            @Override
+            public void cancelled() {
+                System.out.println("Canceled");
+            }
+        });
 
 
     }
