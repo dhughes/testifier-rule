@@ -4,9 +4,8 @@
   <artifactId>testifier-rule</artifactId>
   <versioning>
     <versions>
-      <version>1.0.6-SNAPSHOT</version>
-      <version>1.0.7-SNAPSHOT</version>
+      <version>1.0.8-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20161013143604</lastUpdated>
+    <lastUpdated>20161013145030</lastUpdated>
   </versioning>
 </metadata>
