@@ -7,10 +7,8 @@ import net.doughughes.testifier.entity.TestException;
 import net.doughughes.testifier.util.SourceCodeExtractor;
 import net.doughughes.testifier.annotation.Testifier;
 import net.doughughes.testifier.util.GitService;
-import org.apache.http.client.fluent.Async;
-import org.apache.http.client.fluent.Content;
 import org.apache.http.client.fluent.Request;
-import org.apache.http.concurrent.FutureCallback;
+import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.ContentType;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.TestWatcher;
@@ -18,8 +16,6 @@ import org.junit.runner.Description;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * This class is a test watcher that will notify an external server when tests
@@ -27,14 +23,22 @@ import java.util.concurrent.Executors;
  */
 public class NotifyingWatcher extends TestWatcher {
 
-    private String notificationUrl;
+    // constants
+    public static enum Exceptions {
+        LOG_SHORT,
+        IGNORE
+    }
 
-    // thread pool for http requests
-    private ExecutorService threadPool = Executors.newFixedThreadPool(4);
-    private Async async = Async.newInstance().use(threadPool);
+    private String notificationUrl;
+    private Exceptions exceptionHandling;
+
+    public NotifyingWatcher(String notificationUrl, Exceptions exceptionHandling) {
+        this.notificationUrl = notificationUrl;
+        this.exceptionHandling = exceptionHandling;
+    }
 
     public NotifyingWatcher(String notificationUrl) {
-        this.notificationUrl = notificationUrl;
+        this(notificationUrl, Exceptions.LOG_SHORT);
     }
 
     @Override
@@ -116,30 +120,71 @@ public class NotifyingWatcher extends TestWatcher {
         // get the json version of this notification
         String json = new Gson().toJson(notification);
 
-        // make an async request to post the notification
-        async.execute(Request.Post(notificationUrl)
-                .bodyString(json, ContentType.APPLICATION_JSON), new FutureCallback<Content>() {
-            @Override
-            public void completed(Content result) {
-                System.out.println(result.toString());
+        try {
+            Response response = Request.Post(notificationUrl)
+                    .bodyString(json, ContentType.APPLICATION_JSON)
+                    .execute();
+
+            System.out.println(response);
+        } catch (IOException e) {
+            if(exceptionHandling == Exceptions.LOG_SHORT){
+                // log a short version of the error to the console
+                System.out.println("[Testifier Reporting TestException]: " + e.getMessage());
+                Throwable causedBy = e.getCause();
+                String indent = "\t[Caused By]: ";
+                while(causedBy != null){
+                    System.out.println(indent + causedBy.getMessage());
+
+                    // setup for the next caused by
+                    causedBy = causedBy.getCause();
+                    indent += "\t";
+                }
+
             }
+        }
 
-            @Override
-            public void failed(Exception ex) {
-                ex.printStackTrace();
+
+        // old
+        //String gitRepo = GitService.getOriginUrl();
+
+
+        /*try {
+            RestTemplate template = new RestTemplate();
+
+            String notificationResult = template.postForObject(notificationUrl, notification, String.class);
+
+            System.out.println("[Testifier Reporting Result]: " + notificationResult);
+
+        } catch (ResourceAccessException e){
+            if(exceptionHandling == Exceptions.LOG_SHORT){
+                // log a short version of the error to the console
+                System.out.println("[Testifier Reporting TestException]: " + e.getMessage());
+                Throwable causedBy = e.getCause();
+                String indent = "\t[Caused By]: ";
+                while(causedBy != null){
+                    System.out.println(indent + causedBy.getMessage());
+
+                    // setup for the next caused by
+                    causedBy = causedBy.getCause();
+                    indent += "\t";
+                }
+
+            } else if(exceptionHandling == Exceptions.THROW){
+                // just throw the error
+                throw e;
+
             }
+            // we ignore Exceptions.IGNORE
 
-            @Override
-            public void cancelled() {
-                System.out.println("Canceled");
-            }
-        });
-
-
+        }*/
     }
 
     private Class getClazz(Description description) {
-        return description.getTestClass().getAnnotation(Testifier.class).clazz();
+        if(description.getTestClass().getAnnotation(Testifier.class).clazz() != null){
+            return description.getTestClass().getAnnotation(Testifier.class).clazz();
+        } else {
+            return description.getAnnotation(Testifier.class).clazz();
+        }
     }
 
     private String getSourcePath(Description description) {
