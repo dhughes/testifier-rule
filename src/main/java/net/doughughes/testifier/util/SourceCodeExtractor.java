@@ -28,6 +28,10 @@ public class SourceCodeExtractor {
     }
 
     public String getMethodSource(String methodName, Class... args) throws IOException, ParseException {
+        return getMethodStructure(methodName, args).toString();
+    }
+
+    public BodyDeclaration getMethodStructure(String methodName, Class... args) throws IOException, ParseException {
 
         // this is some ugly code. I suspect I don't really understand well how the javaparser
         // library is working. There's probably an easier or better way to do this, but I'm not sure
@@ -62,7 +66,7 @@ public class SourceCodeExtractor {
                 }).findFirst().get();
 
         // only one method should match
-        return matchingMethod.toString();
+        return matchingMethod;
     }
 
     public String getClassSource() {
