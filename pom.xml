@@ -7,7 +7,7 @@
     <groupId>net.doughughes</groupId>
     <artifactId>testifier-rule</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.8-SNAPSHOT</version>
+    <version>1.0.8</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>

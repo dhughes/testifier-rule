@@ -125,7 +125,6 @@ public class NotifyingWatcher extends TestWatcher {
                     .bodyString(json, ContentType.APPLICATION_JSON)
                     .execute();
 
-            System.out.println(response);
         } catch (IOException e) {
             if(exceptionHandling == Exceptions.LOG_SHORT){
                 // log a short version of the error to the console
