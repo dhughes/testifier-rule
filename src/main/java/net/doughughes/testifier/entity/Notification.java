@@ -18,16 +18,20 @@ public class Notification {
 
     private String result;
 
-    private List<String> methodArguments = new ArrayList<>();
+    private List<String> arguments = new ArrayList<>();
 
     private String methodSource;
+    private String constructorSource;
+    private String classSource;
 
     private TestException exception = null;
+
+    private String instructor;
 
     public Notification() {
     }
 
-    public Notification(String studentName, String studentEmail, String projectName, String className, String methodName, Class[] methodArguments, String unitTestName, String testMethodName, String result, String methodSource, TestException exception) {
+    public Notification(String studentName, String studentEmail, String projectName, String className, String methodName, Class[] arguments, String unitTestName, String testMethodName, String result, String methodSource, String constructorSource, String classSource, TestException exception, String instructor) {
         this.studentName = studentName;
         this.studentEmail = studentEmail;
         this.projectName = projectName;
@@ -37,10 +41,13 @@ public class Notification {
         this.testMethodName = testMethodName;
         this.result = result;
         this.methodSource = methodSource;
+        this.constructorSource = constructorSource;
+        this.classSource = classSource;
         this.exception = exception;
+        this.instructor = instructor;
 
         // get the method arguments from the array of classes provided
-        this.methodArguments = Arrays.stream(methodArguments).map(Class::getName).collect(Collectors.toList());
+        this.arguments = Arrays.stream(arguments).map(Class::getName).collect(Collectors.toList());
 
     }
 
@@ -84,12 +91,12 @@ public class Notification {
         this.methodName = methodName;
     }
 
-    public List<String> getMethodArguments() {
-        return methodArguments;
+    public List<String> getArguments() {
+        return arguments;
     }
 
-    public void setMethodArguments(List<String> methodArguments) {
-        this.methodArguments = methodArguments;
+    public void setArguments(List<String> arguments) {
+        this.arguments = arguments;
     }
 
     public String getUnitTestName() {
@@ -132,4 +139,27 @@ public class Notification {
         this.exception = exception;
     }
 
+    public String getInstructor() {
+        return instructor;
+    }
+
+    public void setInstructor(String instructor) {
+        this.instructor = instructor;
+    }
+
+    public String getConstructorSource() {
+        return constructorSource;
+    }
+
+    public void setConstructorSource(String constructorSource) {
+        this.constructorSource = constructorSource;
+    }
+
+    public String getClassSource() {
+        return classSource;
+    }
+
+    public void setClassSource(String classSource) {
+        this.classSource = classSource;
+    }
 }

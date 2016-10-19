@@ -14,5 +14,7 @@ public @interface Testifier {
 
     String method() default "";
 
+    boolean constructor() default false;
+
     Class[] args() default {};
 }

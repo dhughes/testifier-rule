@@ -4,9 +4,11 @@ import com.github.javaparser.ParseException;
 import com.google.gson.Gson;
 import net.doughughes.testifier.entity.Notification;
 import net.doughughes.testifier.entity.TestException;
+import net.doughughes.testifier.util.Instructor;
 import net.doughughes.testifier.util.SourceCodeExtractor;
 import net.doughughes.testifier.annotation.Testifier;
 import net.doughughes.testifier.util.GitService;
+import net.doughughes.testifier.util.TestifierAnnotationReader;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.ContentType;
@@ -33,12 +35,23 @@ public class NotifyingWatcher extends TestWatcher {
     private Exceptions exceptionHandling;
 
     public NotifyingWatcher(String notificationUrl, Exceptions exceptionHandling) {
-        this.notificationUrl = notificationUrl;
+        setNotificationUrl(notificationUrl);
         this.exceptionHandling = exceptionHandling;
     }
 
     public NotifyingWatcher(String notificationUrl) {
         this(notificationUrl, Exceptions.LOG_SHORT);
+    }
+
+    public void setNotificationUrl(String notificationUrl) {
+        // if we have an environment variable named testifier-url, this overrides
+        // any value passed in via the constructor.
+        if(System.getenv("testifier-url") != null){
+            this.notificationUrl = System.getenv("testifier-url");
+            System.out.printf("[Testifier:] Ignoring configured notification url, using %s instead.\n", this.notificationUrl);
+        } else {
+            this.notificationUrl = notificationUrl;
+        }
     }
 
     @Override
@@ -72,12 +85,20 @@ public class NotifyingWatcher extends TestWatcher {
             e.printStackTrace();
         }
 
+        // create an annotation reader
+        TestifierAnnotationReader reader = new TestifierAnnotationReader(
+                description.getTestClass().getAnnotation(Testifier.class),
+                description.getAnnotation(Testifier.class)
+        );
+
         // class name
-        String className = getClazz(description).getCanonicalName();
+        String className = reader.getClazz().getCanonicalName();
 
         // method details
-        String methodName = getMethod(description);
-        Class[] methodArguments = getArgs(description);
+        String methodName = reader.getMethod();
+
+        // method or constructor argument details
+        Class[] arguments = reader.getArgs();
 
         // test name and method
         String unitTestName = description.getTestClass().getName();
@@ -94,14 +115,27 @@ public class NotifyingWatcher extends TestWatcher {
         }
 
         // get the method being tested's source code
-        String sourcePath = getSourcePath(description);
+        String sourcePath = reader.getSourcePath();
         String methodSource = "";
+        String constructorSource = "";
+        String classSource = "";
 
         try {
-            methodSource = new SourceCodeExtractor(sourcePath).getMethodSource(methodName, methodArguments);
+            SourceCodeExtractor extractor = new SourceCodeExtractor(sourcePath);
+            if(!methodName.isEmpty()) {
+                methodSource = extractor.getMethodSource(methodName, arguments);
+            }
+            if(reader.getConstructor()) {
+                constructorSource = extractor.getConstructorSource(arguments);
+            }
+
+            classSource = extractor.getClassSource();
         } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
+
+        // try to figure out who the instructor is for this class (as in classroom / students)
+        String instructor = Instructor.identify();
 
         Notification notification = new Notification(
                 studentName,
@@ -109,12 +143,15 @@ public class NotifyingWatcher extends TestWatcher {
                 projectName,
                 className,
                 methodName,
-                methodArguments,
+                arguments,
                 unitTestName,
                 testMethodName,
                 result,
                 methodSource,
-                new TestException(exception)
+                constructorSource,
+                classSource,
+                new TestException(exception),
+                instructor
         );
 
         // get the json version of this notification
@@ -143,71 +180,8 @@ public class NotifyingWatcher extends TestWatcher {
         }
 
 
-        // old
-        //String gitRepo = GitService.getOriginUrl();
-
-
-        /*try {
-            RestTemplate template = new RestTemplate();
-
-            String notificationResult = template.postForObject(notificationUrl, notification, String.class);
-
-            System.out.println("[Testifier Reporting Result]: " + notificationResult);
-
-        } catch (ResourceAccessException e){
-            if(exceptionHandling == Exceptions.LOG_SHORT){
-                // log a short version of the error to the console
-                System.out.println("[Testifier Reporting TestException]: " + e.getMessage());
-                Throwable causedBy = e.getCause();
-                String indent = "\t[Caused By]: ";
-                while(causedBy != null){
-                    System.out.println(indent + causedBy.getMessage());
-
-                    // setup for the next caused by
-                    causedBy = causedBy.getCause();
-                    indent += "\t";
-                }
-
-            } else if(exceptionHandling == Exceptions.THROW){
-                // just throw the error
-                throw e;
-
-            }
-            // we ignore Exceptions.IGNORE
-
-        }*/
     }
 
-    private Class getClazz(Description description) {
-        if(description.getTestClass().getAnnotation(Testifier.class).clazz() != null){
-            return description.getTestClass().getAnnotation(Testifier.class).clazz();
-        } else {
-            return description.getAnnotation(Testifier.class).clazz();
-        }
-    }
 
-    private String getSourcePath(Description description) {
-        if(!description.getTestClass().getAnnotation(Testifier.class).sourcePath().isEmpty()){
-            return description.getTestClass().getAnnotation(Testifier.class).sourcePath();
-        } else {
-            return description.getAnnotation(Testifier.class).sourcePath();
-        }
-    }
-
-    private String getMethod(Description description) {
-        if(!description.getTestClass().getAnnotation(Testifier.class).method().isEmpty()){
-            return description.getTestClass().getAnnotation(Testifier.class).method();
-        } else {
-            return description.getAnnotation(Testifier.class).method();
-        }
-    }
-
-    private Class[] getArgs(Description description) {
-        if(description.getTestClass().getAnnotation(Testifier.class).args().length != 0){
-            return description.getTestClass().getAnnotation(Testifier.class).args();
-        } else {
-            return description.getAnnotation(Testifier.class).args();
-        }
-    }
 
 }
