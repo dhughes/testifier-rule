@@ -15,7 +15,7 @@ public class TestifierAnnotationReader {
     }
 
     public Class getClazz() {
-        if(methodAnnotation.clazz() != null){
+        if(!methodAnnotation.clazz().equals(Object.class)){
             return methodAnnotation.clazz();
         } else {
             return classAnnotation.clazz();
