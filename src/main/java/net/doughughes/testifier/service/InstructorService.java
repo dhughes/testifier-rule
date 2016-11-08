@@ -1,4 +1,4 @@
-package net.doughughes.testifier.util;
+package net.doughughes.testifier.service;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 /**
  * Created by doug on 10/18/16.
  */
-public class Instructor {
+public class InstructorService {
     /**
      * This method attempts to identify an instructor for a class.
      * @return The instructor's name

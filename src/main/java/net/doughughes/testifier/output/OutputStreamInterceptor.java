@@ -1,5 +1,7 @@
 package net.doughughes.testifier.output;
 
+import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
@@ -77,5 +79,15 @@ public class OutputStreamInterceptor extends PrintStream {
         printed.add(obj);
         super.print(obj);
     }
+
+    @Override
+    public void println(Object obj) {
+        printed.add(obj);
+        String s = String.valueOf(obj);
+        synchronized (this) {
+            super.print(s + "\n");
+        }
+    }
+
 
 }

@@ -1,4 +1,4 @@
-package net.doughughes.testifier.util;
+package net.doughughes.testifier.service;
 
 import net.doughughes.testifier.exception.NoSuchRepositoryException;
 import net.doughughes.testifier.exception.NotAGitRepositoryException;
