@@ -51,6 +51,14 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
                     .append(((StringLiteralExpr) node).getValue())
                     .append("]")
                     .append(" ");
+
+        } else if(node instanceof BooleanLiteralExpr){
+            description
+                    .append(node.getClass().getSimpleName())
+                    .append("[")
+                    .append(((BooleanLiteralExpr) node).getValue())
+                    .append("]")
+                    .append(" ");
         } else {
             description
                     .append(node.getClass().getSimpleName())
@@ -281,7 +289,14 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(AssignExpr n, Object arg) {
-        visit(n);
+
+        visit(n.getTarget());
+
+        description
+                .append(n.getClass().getSimpleName())
+                .append(" ");
+
+        visit(n.getValue());
     }
 
     @Override
@@ -319,8 +334,11 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
     @Override
     public void visit(FieldAccessExpr n, Object arg) {
         n.getScope().accept(this, null);
-        n.getFieldExpr().accept(this, null);
-        //visit(n);
+        description
+                .append(n.getClass().getSimpleName())
+                .append("[")
+                .append(n.getFieldExpr().getName())
+                .append("] ");
 
     }
 
