@@ -21,7 +21,7 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     private StringBuilder description = new StringBuilder();
 
-    private void visitChildren(List children) {
+    private void visitList(List children) {
         if (!isNullOrEmpty(children)) {
             for (Object child : children) {
                 ((Node) child).accept(this, null);
@@ -32,7 +32,11 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
     }
 
     private void visit(Node node){
+
         if(node instanceof NamedNode) {
+            // if this node's name is null then we're skipping it. This has the side effect of ignoring children too. I hope that's ok.
+            if(((NamedNode) node).getName() == null) return;
+
             description
                     .append(node.getClass().getSimpleName())
                     .append("[")
@@ -53,7 +57,7 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
                     .append(" ");
         }
 
-        visitChildren(node.getChildrenNodes());
+        visitList(node.getChildrenNodes());
     }
 
     private void visitAsBlock(Node node){
@@ -61,13 +65,14 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
         description
                 .append("/")
-                .append(node.getClass().getSimpleName());
+                .append(node.getClass().getSimpleName())
+                .append(" ");
 
     }
 
     @Override
     public String toString() {
-        return description.toString().replaceAll("  ", " ").trim();
+        return description.toString().replaceAll("\\s{2,}", " ").trim();
     }
 
     @Override
@@ -79,10 +84,10 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
         }
 
         // visit imports
-        visitChildren(n.getImports());
+        visitList(n.getImports());
 
         // visit the types
-        visitChildren(n.getTypes());
+        visitList(n.getTypes());
     }
 
     @Override
@@ -162,7 +167,36 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(MethodDeclaration n, Object arg) {
-        visitAsBlock(n);
+        // start the method declaration block
+        description
+                .append(n.getClass().getSimpleName())
+                .append("[")
+                .append(n.getName())
+                .append("] ");
+
+        // get the access modifier
+        description
+                .append("AccessModifier[")
+                .append(ModifierSet.getAccessSpecifier(n.getModifiers()).name())
+                .append("] ");
+
+        // if this is static, note that
+        if(ModifierSet.isStatic(n.getModifiers())){
+            description
+                    .append("StaticModifier ");
+        }
+
+        // what's the return type?
+        visit(n.getType());
+
+        // get the body
+        visitAsBlock(n.getBody());
+
+        // close the block
+        description
+                .append("/")
+                .append(n.getClass().getSimpleName())
+                .append(" ");
     }
 
     @Override
@@ -284,7 +318,9 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(FieldAccessExpr n, Object arg) {
-        visit(n);
+        n.getScope().accept(this, null);
+        n.getFieldExpr().accept(this, null);
+        //visit(n);
 
     }
 
@@ -340,8 +376,32 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(MethodCallExpr n, Object arg) {
-        visitAsBlock(n);
+        description
+                .append(n.getClass().getSimpleName())
+                .append(" ");
 
+        // visit the scope (IE, what's this call on?)
+        n.getScope().accept(this, arg);
+
+        description
+                .append("MethodName[")
+                .append(n.getName())
+                .append("] ");
+
+        description
+                .append("MethodArguments ");
+
+        visitList(n.getArgs());
+
+        description
+                .append("/MethodArguments ");
+
+        description
+                .append("/")
+                .append(n.getClass().getSimpleName())
+                .append(" ");
+
+        //visitAsBlock(n);
     }
 
     @Override
@@ -371,7 +431,14 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(UnaryExpr n, Object arg) {
-        visit(n);
+        description
+                .append(n.getClass().getSimpleName())
+                .append("[")
+                .append(n.getOperator())
+                .append("]")
+                .append(" ");
+
+        visitList(n.getChildrenNodes());
     }
 
     @Override
@@ -431,7 +498,7 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(ExpressionStmt n, Object arg) {
-        visit(n);
+        visitAsBlock(n);
     }
 
     @Override
