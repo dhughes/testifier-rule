@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import net.doughughes.testifier.entity.Notification;
 import net.doughughes.testifier.entity.TestException;
 import net.doughughes.testifier.watcher.CodeWatcher;
-import org.apache.http.client.fluent.InsecureHttpsRequest;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
 import org.junit.runner.Description;
@@ -27,8 +26,8 @@ public class NotificationService {
 
     public void setNotificationUrl(String notificationUrl) {
         // if we have an environment variable named notifier-url we must ALWAYS use that
-        if(System.getenv("notifier-url") != null){
-            this.notificationUrl = System.getenv("notifier-url");
+        if(System.getenv("NOTIFIER_URL") != null){
+            this.notificationUrl = System.getenv("NOTIFIER_URL");
             System.out.printf("[Testifier:] Ignoring configured notification url, using %s instead.\n", this.notificationUrl);
         } else {
             this.notificationUrl = notificationUrl;
