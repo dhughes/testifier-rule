@@ -20,7 +20,11 @@ public class Invoker {
         try {
             methodToInvoke = object.getClass().getMethod(method, objects);
         } catch (NoSuchMethodException e) {
-            throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
+            if(objects.length > 0) {
+                throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
+            } else {
+                throw new CannotFindMethodException("Cannot find method " + method + "() that accepts no arguments.", e);
+            }
         }
 
         try {
@@ -38,7 +42,11 @@ public class Invoker {
         try {
             methodToInvoke = clazz.getMethod(method, objects);
         } catch (NoSuchMethodException e) {
-            throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
+            if(objects.length > 0) {
+                throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
+            } else {
+                throw new CannotFindMethodException("Cannot find method " + method + "() that accepts no arguments.", e);
+            }
         }
 
         try {
