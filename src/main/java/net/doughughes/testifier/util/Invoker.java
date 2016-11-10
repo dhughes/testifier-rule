@@ -35,6 +35,7 @@ public class Invoker {
         }
 
         try {
+            methodToInvoke.setAccessible(true);
             return methodToInvoke.invoke(object, args);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new CannotAccessMethodException("Cannot access property " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?", e);
@@ -63,6 +64,7 @@ public class Invoker {
         }
 
         try {
+            methodToInvoke.setAccessible(true);
             return methodToInvoke.invoke(null, args);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new CannotAccessMethodException("Cannot access property " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?", e);
@@ -83,7 +85,7 @@ public class Invoker {
 
         // validate access is allowed
         // if the packages are the same and the property is not private, then we can access the property
-        if(!canAccessFromCaller(object, fieldToRead)){
+        if(!canAccessFromCaller(object.getClass(), fieldToRead)){
             throw new CannotAccessFieldException("Cannot access property " + property + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?");
         }
 
@@ -95,7 +97,7 @@ public class Invoker {
         }
     }
 
-    private static boolean canAccessFromCaller(Object object, Field field) {
+    private static boolean canAccessFromCaller(Class clazz, Field field) {
         String callingFromClassName;
         try {
             throw new Exception("Intentionally throwing an exception so we can examine the stack trace");
@@ -104,10 +106,10 @@ public class Invoker {
             callingFromClassName = stackTrace[2].getClassName();
         }
 
-        return verifyAccess(callingFromClassName, object.getClass(), field.getModifiers());
+        return verifyAccess(callingFromClassName, clazz, field.getModifiers());
     }
 
-    private static boolean canAccessFromCaller(Object object, Method method) {
+    private static boolean canAccessFromCaller(Class clazz, Method method) {
         String callingFromClassName;
         try {
             throw new Exception("Intentionally throwing an exception so we can examine the stack trace");
@@ -116,7 +118,7 @@ public class Invoker {
             callingFromClassName = stackTrace[2].getClassName();
         }
 
-        return verifyAccess(callingFromClassName, object.getClass(), method.getModifiers());
+        return verifyAccess(callingFromClassName, clazz, method.getModifiers());
     }
 
     private static boolean verifyAccess(String callingFromClassName, Class targetClass, int modifiers){
