@@ -18,7 +18,7 @@ public class Invoker {
 
         Method methodToInvoke = null;
         try {
-            methodToInvoke = object.getClass().getMethod(method, objects);
+            methodToInvoke = object.getClass().getDeclaredMethod(method, objects);
         } catch (NoSuchMethodException e) {
             if(objects.length > 0) {
                 throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
@@ -40,7 +40,7 @@ public class Invoker {
 
         Method methodToInvoke = null;
         try {
-            methodToInvoke = clazz.getMethod(method, objects);
+            methodToInvoke = clazz.getDeclaredMethod(method, objects);
         } catch (NoSuchMethodException e) {
             if(objects.length > 0) {
                 throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
@@ -61,7 +61,7 @@ public class Invoker {
         Field fieldToRead = null;
 
         try {
-            fieldToRead = object.getClass().getField(property);
+            fieldToRead = object.getClass().getDeclaredField(property);
         } catch (NoSuchFieldException e) {
             throw new CannotFindFieldException("Cannot find property " + property, e);
         }
