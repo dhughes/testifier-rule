@@ -1,5 +1,6 @@
 package net.doughughes.testifier.util;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -29,5 +30,17 @@ public class Invoker {
         }
 
         return methodToInvoke.invoke(null, args);
+    }
+
+    public static Object readProperty(Object object, String property) throws Exception {
+        Field fieldToRead = null;
+
+        try {
+            fieldToRead = object.getClass().getField(property);
+        } catch (NoSuchFieldException e) {
+            throw new Exception("Cannot find property " + property, e);
+        }
+
+        return fieldToRead.get(object);
     }
 }
