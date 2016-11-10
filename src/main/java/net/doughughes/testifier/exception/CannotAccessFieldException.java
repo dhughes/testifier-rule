@@ -7,4 +7,8 @@ public class CannotAccessFieldException extends Exception {
     public CannotAccessFieldException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public CannotAccessFieldException(String message) {
+        super(message);
+    }
 }

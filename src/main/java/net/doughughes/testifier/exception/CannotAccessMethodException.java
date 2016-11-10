@@ -7,4 +7,8 @@ public class CannotAccessMethodException extends Exception {
     public CannotAccessMethodException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public CannotAccessMethodException(String message) {
+        super(message);
+    }
 }
