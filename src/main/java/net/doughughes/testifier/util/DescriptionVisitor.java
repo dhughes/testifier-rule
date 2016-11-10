@@ -399,7 +399,9 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
                 .append(" ");
 
         // visit the scope (IE, what's this call on?)
-        n.getScope().accept(this, arg);
+        if(n.getScope() != null) {
+            n.getScope().accept(this, arg);
+        }
 
         description
                 .append("MethodName[")

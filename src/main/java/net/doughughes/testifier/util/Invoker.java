@@ -5,11 +5,10 @@ import net.doughughes.testifier.exception.CannotAccessMethodException;
 import net.doughughes.testifier.exception.CannotFindFieldException;
 import net.doughughes.testifier.exception.CannotFindMethodException;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Invoker {
 
@@ -18,7 +17,7 @@ public class Invoker {
 
         Method methodToInvoke = null;
         try {
-            methodToInvoke = object.getClass().getDeclaredMethod(method, objects);
+            methodToInvoke = getMethod(object.getClass(), method, objects);
         } catch (NoSuchMethodException e) {
             if(objects.length > 0) {
                 throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
@@ -47,7 +46,7 @@ public class Invoker {
 
         Method methodToInvoke = null;
         try {
-            methodToInvoke = clazz.getDeclaredMethod(method, objects);
+            methodToInvoke = getMethod(clazz, method, objects);
         } catch (NoSuchMethodException e) {
             if(objects.length > 0) {
                 throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
@@ -136,5 +135,78 @@ public class Invoker {
         }
 
         return true;
+    }
+
+    /**
+     * This method finds methods on a given class based on the name and the
+     * specified arguments. It's similar to class.getMethods(), but it
+     * will take into account autoboxing primitives.
+     * @param clazz
+     * @param methodName
+     * @param objects
+     * @return
+     */
+    private static Method getMethod(Class<?> clazz, String methodName, Class[] objects) throws NoSuchMethodException {
+
+        List<Method> methods = Arrays.asList(clazz.getMethods());
+
+        // filter to methods with the correct name and which accept the correct number of parameters
+        methods = methods.stream()
+                // filter to methods with the same name
+                .filter(method -> method.getName().equals(methodName) && method.getParameters().length == objects.length)
+                .collect(Collectors.toList());
+
+        // no matches? throw an exception
+        if(methods.size() == 0) throw new NoSuchMethodException("Could not find a method named '" + methodName + "' that accepts the specified arguments, " + objects);
+
+        Method matchingMethod = null;
+
+        // find a method that accepts the specified arguments
+        for(Method method : methods){
+            // assume we have a match
+            boolean matches = true;
+
+            // iterate over this method's parameters
+            for(int x = 0 ; x < method.getParameters().length ; x++){
+                // get this parameter's expected type
+                Class requiredClass = method.getParameters()[x].getType();
+                Class providedClass = objects[x];
+
+                // is this required parameter primitive?
+                if(requiredClass.isPrimitive()) {
+                    // yes. the provided class must be able to be unboxed to this primitive type
+                    try {
+                        // get the primitive class for the provided parameter, if possible
+                        Class primitiveProvidedClass = (Class) providedClass.getField("TYPE").get(null);
+
+                        // do the parameter types match?
+                        matches = requiredClass.equals(primitiveProvidedClass);
+                    } catch (IllegalAccessException | NoSuchFieldException e) {
+                        // if we get an error then we know the provided parameter isn't the correct type
+                        matches = false;
+                    }
+                }  else {
+                    // no. the required and provided classes do not match
+                    matches = requiredClass.equals(providedClass);
+                }
+
+                // does this parameter NOT match?
+                if(!matches){
+                    // stop iterating over the arguments and try the next method.
+                    break;
+                }
+            }
+
+            // if we found a match then we're done!
+            if(matches){
+                matchingMethod = method;
+                break;
+            }
+        }
+
+        if(matchingMethod == null) throw new NoSuchMethodException("Could not find a method named '" + methodName + "' that accepts the specified arguments, " + objects);
+
+        return matchingMethod;
+
     }
 }
