@@ -7,6 +7,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.visitor.TreeVisitor;
+import net.doughughes.testifier.exception.CannotFindMethodException;
 import net.doughughes.testifier.util.DescriptionVisitor;
 
 import java.io.FileInputStream;
@@ -40,7 +41,7 @@ public class SourceCodeService {
         return this.compilationUnit.toString();
     }
 
-    public String getMethodSource(String methodName, Class... args) throws IOException, ParseException {
+    public String getMethodSource(String methodName, Class... args) throws IOException, ParseException, CannotFindMethodException {
         BodyDeclaration method = getMethodStructure(methodName, args);
         if(method != null) {
             return getMethodStructure(methodName, args).toStringWithoutComments();
@@ -49,7 +50,7 @@ public class SourceCodeService {
         }
     }
 
-    public MethodDeclaration getMethodStructure(String methodName, Class... args)  {
+    public MethodDeclaration getMethodStructure(String methodName, Class... args) throws CannotFindMethodException {
 
         List<MethodDeclaration> methodDeclarations = new ArrayList<>();
 
@@ -72,10 +73,14 @@ public class SourceCodeService {
 
         visitor.visitDepthFirst(this.compilationUnit);
 
+        if(methodDeclarations.size() == 0){
+            throw new CannotFindMethodException("Cannot find a method named '" + methodName + "' on class '" + getClassName() + "'.");
+        }
+
         return methodDeclarations.get(0);
     }
 
-    public String getDescriptionOfMethod(String methodName, Class... args) {
+    public String getDescriptionOfMethod(String methodName, Class... args) throws CannotFindMethodException {
         DescriptionVisitor describeVisitor = new DescriptionVisitor();
 
         describeVisitor.visit(getMethodStructure(methodName, args), null);

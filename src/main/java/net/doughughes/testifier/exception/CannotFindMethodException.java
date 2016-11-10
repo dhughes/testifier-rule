@@ -8,4 +8,8 @@ public class CannotFindMethodException extends Exception {
     public CannotFindMethodException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public CannotFindMethodException(String message) {
+        super(message);
+    }
 }
