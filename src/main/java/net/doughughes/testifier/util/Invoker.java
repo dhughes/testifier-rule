@@ -1,9 +1,6 @@
 package net.doughughes.testifier.util;
 
-import net.doughughes.testifier.exception.CannotAccessFieldException;
-import net.doughughes.testifier.exception.CannotAccessMethodException;
-import net.doughughes.testifier.exception.CannotFindFieldException;
-import net.doughughes.testifier.exception.CannotFindMethodException;
+import net.doughughes.testifier.exception.*;
 
 import java.lang.reflect.*;
 import java.util.Arrays;
@@ -11,6 +8,35 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Invoker {
+
+    public static Object instantiate(Class<?> clazz, Object ... args) throws CannotFindConstructorException, CannotInstantiateClassException, CannotAccessMethodException {
+        Class[] objects = Arrays.stream(args).map(Object::getClass).toArray(Class[]::new);
+
+        Constructor constructor = null;
+        try {
+            constructor = getConstructor(clazz, objects);
+        } catch (NoSuchMethodException e) {
+            if(objects.length > 0) {
+                throw new CannotFindConstructorException("Cannot find constructor for class '" + clazz.getCanonicalName() + " that accepts arguments " + Arrays.toString(objects), e);
+            } else {
+                throw new CannotFindConstructorException("Cannot find constructor for class '" + clazz.getCanonicalName() + " that accepts no arguments.", e);
+            }
+        }
+        String modifiers = Modifier.toString(constructor.getModifiers());
+
+        // validate access is allowed
+        // if the packages are the same and the property is not private, then we can access the property
+        if(!canAccessFromCaller(clazz, constructor)){
+            throw new CannotAccessMethodException("Cannot access constructor for class '" + clazz.getCanonicalName() + " that accepts arguments " + Arrays.toString(objects) + ". Perhaps the access modifier (" + modifiers + ") is not correct?");
+        }
+
+        try {
+            constructor.setAccessible(true);
+            return constructor.newInstance(args);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new CannotInstantiateClassException("Cannot instantiate class " + clazz.getCanonicalName() + ". Perhaps the constructor's access modifier (" + modifiers + ") is not correct?", e);
+        }
+    }
 
     public static Object invoke(Object object, String method, Object ... args) throws CannotFindMethodException, CannotAccessMethodException {
         Class[] objects = Arrays.stream(args).map(Object::getClass).toArray(Class[]::new);
@@ -109,15 +135,22 @@ public class Invoker {
     }
 
     private static boolean canAccessFromCaller(Class clazz, Method method) {
-        String callingFromClassName;
+        String callingFromClassName = getCallingFromClassName();
+        return verifyAccess(callingFromClassName, clazz, method.getModifiers());
+    }
+
+    private static boolean canAccessFromCaller(Class<?> clazz, Constructor constructor) {
+        String callingFromClassName = getCallingFromClassName();
+        return verifyAccess(callingFromClassName, clazz, constructor.getModifiers());
+    }
+
+    private static String getCallingFromClassName() {
         try {
             throw new Exception("Intentionally throwing an exception so we can examine the stack trace");
         } catch (Exception e) {
             StackTraceElement[] stackTrace = e.getStackTrace();
-            callingFromClassName = stackTrace[2].getClassName();
+            return stackTrace[2].getClassName();
         }
-
-        return verifyAccess(callingFromClassName, clazz, method.getModifiers());
     }
 
     private static boolean verifyAccess(String callingFromClassName, Class targetClass, int modifiers){
@@ -163,42 +196,8 @@ public class Invoker {
 
         // find a method that accepts the specified arguments
         for(Method method : methods){
-            // assume we have a match
-            boolean matches = true;
-
-            // iterate over this method's parameters
-            for(int x = 0 ; x < method.getParameters().length ; x++){
-                // get this parameter's expected type
-                Class requiredClass = method.getParameters()[x].getType();
-                Class providedClass = objects[x];
-
-                // is this required parameter primitive?
-                if(requiredClass.isPrimitive()) {
-                    // yes. the provided class must be able to be unboxed to this primitive type
-                    try {
-                        // get the primitive class for the provided parameter, if possible
-                        Class primitiveProvidedClass = (Class) providedClass.getField("TYPE").get(null);
-
-                        // do the parameter types match?
-                        matches = requiredClass.equals(primitiveProvidedClass);
-                    } catch (IllegalAccessException | NoSuchFieldException e) {
-                        // if we get an error then we know the provided parameter isn't the correct type
-                        matches = false;
-                    }
-                }  else {
-                    // no. the required and provided classes do not match
-                    matches = requiredClass.equals(providedClass);
-                }
-
-                // does this parameter NOT match?
-                if(!matches){
-                    // stop iterating over the arguments and try the next method.
-                    break;
-                }
-            }
-
             // if we found a match then we're done!
-            if(matches){
+            if(compareParameters(method.getParameters(), objects)){
                 matchingMethod = method;
                 break;
             }
@@ -208,5 +207,76 @@ public class Invoker {
 
         return matchingMethod;
 
+    }
+
+
+
+    private static Constructor getConstructor(Class<?> clazz, Class[] objects) throws NoSuchMethodException {
+
+
+        List<Constructor> constructors = Arrays.asList(clazz.getConstructors());
+
+        // filter to constructors which accept the correct number of parameters
+        constructors = constructors.stream()
+                // filter to methods with the same name
+                .filter(constructor -> constructor.getParameters().length == objects.length)
+                .collect(Collectors.toList());
+
+        // no matches? throw an exception
+        if(constructors.size() == 0) throw new NoSuchMethodException("Could not find a constructor that accepts the specified arguments, " + objects);
+
+        Constructor matchingConstructor = null;
+
+        // find a method that accepts the specified arguments
+        for(Constructor constructor : constructors){
+            // if we found a match then we're done!
+            if(compareParameters(constructor.getParameters(), objects)){
+                matchingConstructor = constructor;
+                break;
+            }
+        }
+
+        if(matchingConstructor == null) throw new NoSuchMethodException("Could not find a constructor that accepts the specified arguments, " + objects);
+
+        return matchingConstructor;
+
+    }
+
+    private static boolean compareParameters(Parameter[] parameters, Class[] objects) {
+        // assume this is a match!
+        boolean matches = true;
+
+        // iterate over this method's parameters
+        for(int x = 0 ; x < parameters.length ; x++){
+            // get this parameter's expected type
+            Class requiredClass = parameters[x].getType();
+            Class providedClass = objects[x];
+
+            // is this required parameter primitive?
+            if(requiredClass.isPrimitive()) {
+                // yes. the provided class must be able to be unboxed to this primitive type
+                try {
+                    // get the primitive class for the provided parameter, if possible
+                    Class primitiveProvidedClass = (Class) providedClass.getField("TYPE").get(null);
+
+                    // do the parameter types match?
+                    matches = requiredClass.equals(primitiveProvidedClass);
+                } catch (IllegalAccessException | NoSuchFieldException e) {
+                    // if we get an error then we know the provided parameter isn't the correct type
+                    matches = false;
+                }
+            }  else {
+                // no. the required and provided classes do not match
+                matches = requiredClass.equals(providedClass);
+            }
+
+            // does this parameter NOT match?
+            if(!matches){
+                // stop iterating over the arguments and try the next method.
+                return false;
+            }
+        }
+
+        return true;
     }
 }
