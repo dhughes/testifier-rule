@@ -2,6 +2,7 @@ package net.doughughes.testifier.entity;
 
 public class Notification {
 
+    private Long studentId;
     private String studentName;
     private String studentEmail;
     private String projectName;
@@ -21,7 +22,8 @@ public class Notification {
     public Notification() {
     }
 
-    public Notification(String studentName, String studentEmail, String projectName, String className, String unitTestName, String testMethodName, String result, String classSource, TestException exception, String instructor) {
+    public Notification(Long studentId, String studentName, String studentEmail, String projectName, String className, String unitTestName, String testMethodName, String result, String classSource, TestException exception, String instructor) {
+        this.studentId = studentId;
         this.studentName = studentName;
         this.studentEmail = studentEmail;
         this.projectName = projectName;
@@ -32,6 +34,14 @@ public class Notification {
         this.classSource = classSource;
         this.exception = exception;
         this.instructor = instructor;
+    }
+
+    public Long getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(Long studentId) {
+        this.studentId = studentId;
     }
 
     public String getStudentName() {

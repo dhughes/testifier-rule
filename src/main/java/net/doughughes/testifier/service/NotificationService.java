@@ -3,6 +3,7 @@ package net.doughughes.testifier.service;
 import com.google.gson.Gson;
 import net.doughughes.testifier.entity.Notification;
 import net.doughughes.testifier.entity.TestException;
+import net.doughughes.testifier.exception.TiyConfigNotFoundException;
 import net.doughughes.testifier.watcher.CodeWatcher;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
@@ -12,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Created by doug on 11/7/16.
+ * This holds data sent to the notifier webapp when tests are run.
  */
 public class NotificationService {
 
@@ -35,66 +36,68 @@ public class NotificationService {
     }
 
     public void notifyUrl(Throwable exception, Description description) {
-        // student details
-        String studentName = GitService.getGitUserName();
-        String studentEmail = GitService.getGitEmail();
+        try{
+            // student details
+            Long studentId = ConfigService.getStudentId();
+            String studentName = GitService.getGitUserName();
+            String studentEmail = GitService.getGitEmail();
 
-        // project (root dir) name
-        String projectName = getProjectName();
+            // project (root dir) name
+            String projectName = getProjectName();
 
-        // get the name of the class under test
-        String className = codeWatcher.getMainSourceCodeService().getClassName();
+            // get the name of the class under test
+            String className = codeWatcher.getMainSourceCodeService().getClassName();
 
-        // get the source code for the class being tested
-        String sourceCode = codeWatcher.getMainSourceCodeService().getSource();
+            // get the source code for the class being tested
+            String sourceCode = codeWatcher.getMainSourceCodeService().getSource();
 
-        // test name and method
-        String unitTestName = description.getTestClass().getName();
-        String testMethodName = description.getMethodName();
+            // test name and method
+            String unitTestName = description.getTestClass().getName();
+            String testMethodName = description.getMethodName();
 
-        // was there an exception or failure?
-        String result = "success";
-        if(exception != null){
-            if(exception.getClass().equals(AssertionError.class)){
-                result = "failure";
-            } else {
-                result = "exception";
+            // was there an exception or failure?
+            String result = "success";
+            if(exception != null){
+                if(exception.getClass().equals(AssertionError.class)){
+                    result = "failure";
+                } else {
+                    result = "exception";
+                }
             }
-        }
 
-        // get the method being tested's source code
-        String sourcePath = codeWatcher.getMainSourceCodeService().getSourcePath();
-        String classSource = codeWatcher.getMainSourceCodeService().getSource();
+            // get the method being tested's source code
+            String sourcePath = codeWatcher.getMainSourceCodeService().getSourcePath();
+            String classSource = codeWatcher.getMainSourceCodeService().getSource();
 
-        // try to figure out who the instructor is for this class (as in classroom / students)
-        String instructor = InstructorService.identify();
+            // try to figure out who the instructor is for this class (as in classroom / students)
+            String instructor = ConfigService.getInstructor();
 
-        Notification notification = new Notification(
-                studentName,
-                studentEmail,
-                projectName,
-                className,
-                unitTestName,
-                testMethodName,
-                result,
-                classSource,
-                new TestException(exception),
-                instructor
-        );
+            Notification notification = new Notification(
+                    studentId,
+                    studentName,
+                    studentEmail,
+                    projectName,
+                    className,
+                    unitTestName,
+                    testMethodName,
+                    result,
+                    classSource,
+                    new TestException(exception),
+                    instructor
+            );
 
-        // get the json version of this notification
-        String json = new Gson().toJson(notification);
+            // get the json version of this notification
+            String json = new Gson().toJson(notification);
 
-        try {
             Request.Post(notificationUrl)
                     .connectTimeout(500)
                     .socketTimeout(500)
                     .bodyString(json, ContentType.APPLICATION_JSON)
                     .execute();
 
-        } catch (IOException e) {
+        } catch (TiyConfigNotFoundException | IOException e) {
             // log a short version of the error to the console
-            System.out.println("[Testifier Reporting TestException]: " + e.getMessage());
+            System.out.println("[Testifier Reporting " + e.getClass().getSimpleName() + "]: " + e.getMessage());
             Throwable causedBy = e.getCause();
             String indent = "\t[Caused By]: ";
             while (causedBy != null) {
@@ -105,8 +108,6 @@ public class NotificationService {
                 indent += "\t";
             }
         }
-
-
     }
 
     private String getProjectName() {
