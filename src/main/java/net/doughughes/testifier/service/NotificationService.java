@@ -39,17 +39,12 @@ public class NotificationService {
         try{
             // student details
             Long studentId = ConfigService.getStudentId();
-            String studentName = GitService.getGitUserName();
-            String studentEmail = GitService.getGitEmail();
 
             // project (root dir) name
             String projectName = getProjectName();
 
             // get the name of the class under test
             String className = codeWatcher.getMainSourceCodeService().getClassName();
-
-            // get the source code for the class being tested
-            String sourceCode = codeWatcher.getMainSourceCodeService().getSource();
 
             // test name and method
             String unitTestName = description.getTestClass().getName();
@@ -66,7 +61,7 @@ public class NotificationService {
             }
 
             // get the method being tested's source code
-            String sourcePath = codeWatcher.getMainSourceCodeService().getSourcePath();
+            //String sourcePath = codeWatcher.getMainSourceCodeService().getSourcePath();
             String classSource = codeWatcher.getMainSourceCodeService().getSource();
 
             // try to figure out who the instructor is for this class (as in classroom / students)
@@ -74,8 +69,6 @@ public class NotificationService {
 
             Notification notification = new Notification(
                     studentId,
-                    studentName,
-                    studentEmail,
                     projectName,
                     className,
                     unitTestName,

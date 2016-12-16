@@ -3,29 +3,23 @@ package net.doughughes.testifier.entity;
 public class Notification {
 
     private Long studentId;
-    private String studentName;
-    private String studentEmail;
+
     private String projectName;
-    private String className;
 
     private String unitTestName;
     private String testMethodName;
 
-    private String result;
-
+    private String className;
     private String classSource;
-
+    private String result;
     private TestException exception = null;
-
     private String instructor;
 
     public Notification() {
     }
 
-    public Notification(Long studentId, String studentName, String studentEmail, String projectName, String className, String unitTestName, String testMethodName, String result, String classSource, TestException exception, String instructor) {
+    public Notification(Long studentId, String projectName, String className, String unitTestName, String testMethodName, String result, String classSource, TestException exception, String instructor) {
         this.studentId = studentId;
-        this.studentName = studentName;
-        this.studentEmail = studentEmail;
         this.projectName = projectName;
         this.className = className;
         this.unitTestName = unitTestName;
@@ -42,22 +36,6 @@ public class Notification {
 
     public void setStudentId(Long studentId) {
         this.studentId = studentId;
-    }
-
-    public String getStudentName() {
-        return studentName;
-    }
-
-    public void setStudentName(String studentName) {
-        this.studentName = studentName;
-    }
-
-    public String getStudentEmail() {
-        return studentEmail;
-    }
-
-    public void setStudentEmail(String studentEmail) {
-        this.studentEmail = studentEmail;
     }
 
     public String getProjectName() {
@@ -100,6 +78,14 @@ public class Notification {
         this.result = result;
     }
 
+    public String getClassSource() {
+        return classSource;
+    }
+
+    public void setClassSource(String classSource) {
+        this.classSource = classSource;
+    }
+
     public TestException getException() {
         return exception;
     }
@@ -114,13 +100,5 @@ public class Notification {
 
     public void setInstructor(String instructor) {
         this.instructor = instructor;
-    }
-
-    public String getClassSource() {
-        return classSource;
-    }
-
-    public void setClassSource(String classSource) {
-        this.classSource = classSource;
     }
 }
