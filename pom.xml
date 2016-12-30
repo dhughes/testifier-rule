@@ -125,7 +125,7 @@
                             <!-- disable webpage processing -->
                             <noJekyll>true</noJekyll>
                             <!-- matches distribution management repository url above -->
-                            <outputDirectory>${exercise.build.directory}/mvn-repo</outputDirectory>
+                            <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
                             <!-- remote branch name -->
                             <branch>refs/heads/mvn-repo</branch>
                             <includes><include>**/*</include></includes>
