@@ -5,6 +5,7 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class OutputWatcher extends TestWatcher {
 
@@ -26,5 +27,9 @@ public class OutputWatcher extends TestWatcher {
 
     public ArrayList getPrinted() {
         return ((OutputStreamInterceptor) System.out).getPrinted();
+    }
+
+    public List<String> getLines() {
+        return ((OutputStreamInterceptor) System.out).getLines();
     }
 }
