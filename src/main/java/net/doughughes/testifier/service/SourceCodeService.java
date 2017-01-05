@@ -74,7 +74,7 @@ public class SourceCodeService {
 
         visitor.visitDepthFirst(this.compilationUnit);
 
-        if(matchedProperty.length == 0){
+        if(matchedProperty[0] == null){
             throw new CannotFindFieldException("Cannot find a property named '" + propertyName + "' on class '" + getClassName() + "'.");
         }
 
