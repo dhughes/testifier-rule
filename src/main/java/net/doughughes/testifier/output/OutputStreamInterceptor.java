@@ -1,9 +1,10 @@
 package net.doughughes.testifier.output;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 public class OutputStreamInterceptor extends PrintStream {
@@ -20,8 +21,13 @@ public class OutputStreamInterceptor extends PrintStream {
         return out;
     }
 
-    public ArrayList getPrinted() {
+    public ArrayList<String> getPrinted() {
         return printed;
+    }
+
+    public List<String> getLines() {
+        String output = getPrinted().stream().collect(Collectors.joining(""));
+        return Arrays.asList(output.split("\n"));
     }
 
     // overridden methods
