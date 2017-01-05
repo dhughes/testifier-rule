@@ -5,8 +5,12 @@ import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.BodyDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.visitor.TreeVisitor;
+import net.doughughes.testifier.exception.CannotFindFieldException;
 import net.doughughes.testifier.exception.CannotFindMethodException;
 import net.doughughes.testifier.util.DescriptionVisitor;
 
@@ -48,6 +52,41 @@ public class SourceCodeService {
         } else {
             return "";
         }
+    }
+
+    public FieldDeclaration getPropertyStructure(String propertyName) throws CannotFindFieldException {
+
+        final FieldDeclaration[] matchedProperty = {null};
+
+        TreeVisitor visitor = new TreeVisitor() {
+
+            @Override
+            public void process(Node node) {
+                if(FieldDeclaration.class.isInstance(node)) {
+                    FieldDeclaration property = (FieldDeclaration) node;
+
+                    if(property.getVariables().get(0).getId().getName().equals(propertyName)){
+                        matchedProperty[0] = property;
+                    }
+                }
+            }
+        };
+
+        visitor.visitDepthFirst(this.compilationUnit);
+
+        if(matchedProperty.length == 0){
+            throw new CannotFindFieldException("Cannot find a property named '" + propertyName + "' on class '" + getClassName() + "'.");
+        }
+
+        return matchedProperty[0];
+    }
+
+    public String getDescriptionOfProperty(String propertyName) throws CannotFindFieldException {
+        DescriptionVisitor describeVisitor = new DescriptionVisitor();
+
+        describeVisitor.visit(getPropertyStructure(propertyName), null);
+
+        return describeVisitor.toString();
     }
 
     public MethodDeclaration getMethodStructure(String methodName, Class... args) throws CannotFindMethodException {

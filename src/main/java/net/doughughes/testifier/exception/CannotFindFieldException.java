@@ -8,4 +8,8 @@ public class CannotFindFieldException extends Exception {
     public CannotFindFieldException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public CannotFindFieldException(String message) {
+        super(message);
+    }
 }

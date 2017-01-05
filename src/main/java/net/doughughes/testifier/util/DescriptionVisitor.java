@@ -155,7 +155,32 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(FieldDeclaration n, Object arg) {
-        visit(n);
+        // start the method declaration block
+        description
+                .append(n.getClass().getSimpleName())
+                .append("[")
+                .append(n.getVariables().get(0).getId().getName())
+                .append("] ");
+
+        // get the access modifier
+        description
+                .append("AccessModifier[")
+                .append(ModifierSet.getAccessSpecifier(n.getModifiers()).name())
+                .append("] ");
+
+        // if this is static, note that
+        if(ModifierSet.isStatic(n.getModifiers())){
+            description
+                    .append("StaticModifier ");
+        }
+
+        // if this is static, note that
+        if(ModifierSet.isFinal(n.getModifiers())){
+            description
+                    .append("FinalModifier ");
+        }
+
+        visitList(n.getChildrenNodes());
     }
 
     @Override
