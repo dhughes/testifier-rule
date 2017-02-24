@@ -97,6 +97,15 @@ public class OutputStreamInterceptor extends PrintStream {
     }
 
     @Override
+    public void println(String s) {
+        printed.add(s);
+        printed.add("\n");
+        synchronized (this) {
+            super.print(s + "\n");
+        }
+    }
+
+    @Override
     public void println(){
         printed.add("\n");
         String s = String.valueOf("\n");

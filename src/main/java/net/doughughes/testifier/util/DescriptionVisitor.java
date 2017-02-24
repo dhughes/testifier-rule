@@ -52,13 +52,14 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
                     .append("]")
                     .append(" ");
 
-        } else if(node instanceof BooleanLiteralExpr){
+        } else if(node instanceof BooleanLiteralExpr) {
             description
                     .append(node.getClass().getSimpleName())
                     .append("[")
                     .append(((BooleanLiteralExpr) node).getValue())
                     .append("]")
                     .append(" ");
+
         } else {
             description
                     .append(node.getClass().getSimpleName())
@@ -220,8 +221,16 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
         }
 
         // what's the return type?
-        visit(n.getType());
+        if(n.getType() instanceof PrimitiveType) {
+            visit((PrimitiveType) n.getType(), arg);
+        } else {
+            visit(n.getType());
+        }
 
+        // what are the arguments?
+        for(Parameter param : n.getParameters()){
+            visitAsBlock(param);
+        }
         // get the body
         visitAsBlock(n.getBody());
 
@@ -263,8 +272,15 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
     }
 
     @Override
-    public void visit(PrimitiveType n, Object arg) {
-        visit(n);
+    public void visit(PrimitiveType node, Object arg) {
+        // start the method declaration block
+        description
+                .append(node.getClass().getSimpleName())
+                .append("[")
+                .append(node.getType())
+                .append("] ");
+
+        visitList(node.getChildrenNodes());
     }
 
     @Override
@@ -588,12 +604,12 @@ public class DescriptionVisitor implements VoidVisitor<Object> {
 
     @Override
     public void visit(ForeachStmt n, Object arg) {
-        visit(n);
+        visitAsBlock(n);
     }
 
     @Override
     public void visit(ForStmt n, Object arg) {
-        visit(n);
+        visitAsBlock(n);
     }
 
     @Override

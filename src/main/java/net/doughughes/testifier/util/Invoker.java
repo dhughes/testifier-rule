@@ -38,14 +38,14 @@ public class Invoker {
         }
     }
 
-    public static Object invoke(Object object, String method, Object ... args) throws CannotFindMethodException, CannotAccessMethodException {
+    public static Object invoke(Object object, String method, Object ... args) throws CannotFindMethodException, CannotAccessMethodException, CannotInvokeMethodException {
         Class[] objects = Arrays.stream(args).map(Object::getClass).toArray(Class[]::new);
 
         Method methodToInvoke = null;
         try {
             methodToInvoke = getMethod(object.getClass(), method, objects);
         } catch (NoSuchMethodException e) {
-            if(objects.length > 0) {
+            if (objects.length > 0) {
                 throw new CannotFindMethodException("Cannot find method " + method + "() that accepts these arguments " + Arrays.toString(objects), e);
             } else {
                 throw new CannotFindMethodException("Cannot find method " + method + "() that accepts no arguments.", e);
@@ -55,19 +55,29 @@ public class Invoker {
 
         // validate access is allowed
         // if the packages are the same and the property is not private, then we can access the property
-        if(!canAccessFromCaller(object.getClass(), methodToInvoke)){
-            throw new CannotAccessMethodException("Cannot access property " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?");
+        if (!canAccessFromCaller(object.getClass(), methodToInvoke)) {
+            throw new CannotAccessMethodException("Cannot access method " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?");
         }
 
         try {
             methodToInvoke.setAccessible(true);
             return methodToInvoke.invoke(object, args);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new CannotAccessMethodException("Cannot access property " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?", e);
+        } catch (IllegalAccessException e) {
+            throw new CannotAccessMethodException("Cannot access method " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?");
+        } catch (InvocationTargetException e) {
+            throw new CannotInvokeMethodException(e.getTargetException());
         }
     }
 
-    public static Object invokeStatic(Class<?> clazz, String method, Object ... args) throws CannotFindMethodException, CannotAccessMethodException {
+    public static Enum getEnumValue(Class clazz, String name) throws CannotFindEnumException {
+        try {
+            return Enum.valueOf(clazz, name);
+        } catch(Exception e){
+            throw new CannotFindEnumException("Cannot find constant " + name + " for enum " + clazz.getName());
+        }
+    }
+
+    public static Object invokeStatic(Class<?> clazz, String method, Object ... args) throws CannotFindMethodException, CannotAccessMethodException, CannotInvokeMethodException, MethodIsNotStaticException {
         Class[] objects = Arrays.stream(args).map(Object::getClass).toArray(Class[]::new);
 
         Method methodToInvoke = null;
@@ -85,14 +95,21 @@ public class Invoker {
         // validate access is allowed
         // if the packages are the same and the property is not private, then we can access the property
         if(!canAccessFromCaller(clazz, methodToInvoke)){
-            throw new CannotAccessMethodException("Cannot access property " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?");
+            throw new CannotAccessMethodException("Cannot access method " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?");
+        }
+
+        // validate method is static
+        if(!Modifier.isStatic(methodToInvoke.getModifiers())){
+            throw new MethodIsNotStaticException(method + "() method is not static.");
         }
 
         try {
             methodToInvoke.setAccessible(true);
             return methodToInvoke.invoke(null, args);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new CannotAccessMethodException("Cannot access property " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?", e);
+        } catch (IllegalAccessException e) {
+            throw new CannotAccessMethodException("Cannot access method " + method + ". Perhaps the access modifier(s) (" + modifiers + ") is/are not correct?");
+        } catch (InvocationTargetException e){
+            throw new CannotInvokeMethodException(e.getTargetException());
         }
     }
 

@@ -13,7 +13,7 @@ public class TestifierTest {
     @Rule
     public CodeWatcher codeWatcher = new CodeWatcher("./src");
 
-    private NotificationService notificationService = new NotificationService("https://tiy-notifier.herokuapp.com/notifications/testResult", codeWatcher);
+    private NotificationService notificationService = new NotificationService("https://tiyo-notifier.doughughes.net/notifications/testResult", codeWatcher);
 
     @Rule
     public NotifyingWatcher notifyingWatcher = new NotifyingWatcher(notificationService);

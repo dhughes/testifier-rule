@@ -17,15 +17,18 @@ import net.doughughes.testifier.util.DescriptionVisitor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class SourceCodeService {
 
     private String className;
     private String sourcePath;
+    private String rawSource;
     private CompilationUnit compilationUnit;
 
     public SourceCodeService(String className, String sourcePath) throws FileNotFoundException, ParseException {
@@ -33,8 +36,12 @@ public class SourceCodeService {
         this.sourcePath = sourcePath;
         // get an input stream for the source file
         FileInputStream in = new FileInputStream(sourcePath);
-        // parse the file
-        this.compilationUnit =  JavaParser.parse(in);
+
+        // get the raw source from the specified file
+        this.rawSource = new Scanner(in).useDelimiter("\\Z").next();;
+
+        // parse the source
+        this.compilationUnit = JavaParser.parse(new StringReader(this.rawSource));
     }
 
     public String getClassName() {
@@ -42,7 +49,7 @@ public class SourceCodeService {
     }
 
     public String getSource() {
-        return this.compilationUnit.toString();
+        return this.rawSource;
     }
 
     public String getMethodSource(String methodName, Class... args) throws IOException, ParseException, CannotFindMethodException {
@@ -93,16 +100,27 @@ public class SourceCodeService {
 
         List<MethodDeclaration> methodDeclarations = new ArrayList<>();
 
+        // convert the list of arguments as classes that we're looking for to a list of strings
+        List<String> requiredParameterTypeStrings = Arrays.stream(args).map(Class::getSimpleName).collect(Collectors.toList());
+
         TreeVisitor visitor = new TreeVisitor() {
 
             @Override
             public void process(Node node) {
+                // we're only concerned with nodes that are Method Declarations
                 if(MethodDeclaration.class.isInstance(node)) {
+
+                    // cast our node to be a MethodDeclaration
                     MethodDeclaration method = (MethodDeclaration) node;
+
+                    // does this method's name match the name we're looking for?
                     if(method.getName().equals(methodName)) {
-                        List<String> methodParameterTypeStrings = method.getParameters().stream().map(parameter -> parameter.getType().toString()).collect(Collectors.toList());
-                        List<String> requiredParameterTypeStrings = Arrays.stream(args).map(Class::getSimpleName).collect(Collectors.toList());
+                        // get a list of argument data types (without generics) on the method we found
+                        List<String> methodParameterTypeStrings = method.getParameters().stream().map(parameter -> parameter.getType().toString().replaceAll("<.*?>", "")).collect(Collectors.toList());
+
+                        // does the list of arguments on the method match the list of arguments we're looking for?
                         if(methodParameterTypeStrings.equals(requiredParameterTypeStrings)) {
+                            // add this to the set of matched methods (there really should be only one)
                             methodDeclarations.add((MethodDeclaration) node);
                         }
                     }
@@ -110,12 +128,16 @@ public class SourceCodeService {
             }
         };
 
+        // visit each node in the document
         visitor.visitDepthFirst(this.compilationUnit);
 
+        // did we find something?
         if(methodDeclarations.size() == 0){
+            // that's an error
             throw new CannotFindMethodException("Cannot find a method named '" + methodName + "' on class '" + getClassName() + "'.");
         }
 
+        // return what we found
         return methodDeclarations.get(0);
     }
 
